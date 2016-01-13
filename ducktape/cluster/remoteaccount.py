@@ -69,6 +69,7 @@ class RemoteAccount(HttpMixin):
         if self.ssh_args:
             r += self.ssh_args + " "
         r += "'" + cmd.replace("'", "'\\''") + "'"
+        self.logger.debug("Execute ssh_command \n%s\n" % r)
         return r
 
     def ssh(self, cmd, allow_fail=False):
