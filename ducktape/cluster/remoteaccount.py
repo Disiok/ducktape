@@ -59,9 +59,11 @@ class RemoteAccount(HttpMixin):
         except:
             return False
 
-    def ssh_command(self, cmd):
+    def ssh_command(self, cmd, sudo_user=None):
         if self.local:
             return cmd
+        if sudo_user is not None:
+            cmd = "sudo -u %s %s" % (sudo_user, cmd)
         r = "ssh "
         if self.user:
             r += self.user + "@"
@@ -69,21 +71,22 @@ class RemoteAccount(HttpMixin):
         if self.ssh_args:
             r += self.ssh_args + " "
         r += "'" + cmd.replace("'", "'\\''") + "'"
-        self.logger.debug("Execute ssh_command \n%s\n" % r)
+        if self.logger is not None:
+            self.logger.debug("Execute ssh_command \n%s\n" % r)
         return r
 
-    def ssh(self, cmd, allow_fail=False):
+    def ssh(self, cmd, allow_fail=False, sudo_user=None):
         """
         Run the specified command on the remote host. If allow_fail is False and
         the command returns a non-zero exit status, throws
         subprocess.CalledProcessError. If allow_fail is True, returns the exit
         status of the command.
         """
-        return self._ssh_quiet(self.ssh_command(cmd), allow_fail)
+        return self._ssh_quiet(self.ssh_command(cmd, sudo_user=sudo_user), allow_fail)
 
-    def ssh_capture(self, cmd, allow_fail=False, callback=None):
+    def ssh_capture(self, cmd, allow_fail=False, callback=None, sudo_user=None):
         '''Runs the command via SSH and captures the output, yielding lines of the output.'''
-        ssh_cmd = self.ssh_command(cmd)
+        ssh_cmd = self.ssh_command(cmd, sudo_user=sudo_user)
         proc = subprocess.Popen(ssh_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         def output_generator():
@@ -117,13 +120,13 @@ class RemoteAccount(HttpMixin):
         except:
             return False
 
-    def signal(self, pid, sig, allow_fail=False):
+    def signal(self, pid, sig, allow_fail=False, sudo_user=None):
         cmd = "kill -%s %s" % (str(sig), str(pid))
-        self.ssh(cmd, allow_fail=allow_fail)
+        self.ssh(cmd, allow_fail=allow_fail, sudo_user=sudo_user)
 
-    def kill_process(self, process_grep_str, clean_shutdown=True, allow_fail=False):
+    def kill_process(self, process_grep_str, clean_shutdown=True, allow_fail=False, sudo_user=None):
         cmd = """ps ax | grep -i """ + process_grep_str + """ | grep java | grep -v grep | awk '{print $1}'"""
-        pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True)]
+        pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True, sudo_user=sudo_user)]
 
         if clean_shutdown:
             sig = signal.SIGTERM
@@ -131,7 +134,7 @@ class RemoteAccount(HttpMixin):
             sig = signal.SIGKILL
 
         for pid in pids:
-            self.signal(pid, sig, allow_fail=allow_fail)
+            self.signal(pid, sig, allow_fail=allow_fail, sudo_user=sudo_user)
 
     def scp_from_command(self, src, dest, recursive=False):
         if self.user:
