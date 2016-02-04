@@ -136,6 +136,20 @@ class RemoteAccount(HttpMixin):
         for pid in pids:
             self.signal(pid, sig, allow_fail=allow_fail, sudo_user=sudo_user)
 
+    def pause_process(self, process_grep_str, allow_fail=False, sudo_user=None):
+        cmd = """ps ax | grep -i """ + process_grep_str + """ | grep java | grep -v grep | awk '{print $1}'"""
+        pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True, sudo_user=sudo_user)]
+
+        for pid in pids:
+            self.signal(pid, signal.SIGSTOP, allow_fail=allow_fail, sudo_user=sudo_user)
+
+    def continue_process(self, process_grep_str, allow_fail=False, sudo_user=None):
+        cmd = """ps ax | grep -i """ + process_grep_str + """ | grep java | grep -v grep | awk '{print $1}'"""
+        pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True, sudo_user=sudo_user)]
+
+        for pid in pids:
+            self.signal(pid, signal.SIGCONT, allow_fail=allow_fail, sudo_user=sudo_user)
+
     def scp_from_command(self, src, dest, recursive=False):
         if self.user:
             remotehost = self.user + "@" + self.hostname
