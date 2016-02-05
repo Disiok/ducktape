@@ -131,7 +131,6 @@ class RemoteAccount(HttpMixin):
         for pid in pids:
             self.signal(pid, sig, allow_fail=allow_fail, sudo_user=sudo_user)
 
-
     def kill_process(self, process_grep_str, clean_shutdown=True, allow_fail=False, sudo_user=None):
         self.signal_process(process_grep_str,
                             signal.SIGTERM if clean_shutdown else signal.SIGKILL,
