@@ -124,31 +124,25 @@ class RemoteAccount(HttpMixin):
         cmd = "kill -%s %s" % (str(sig), str(pid))
         self.ssh(cmd, allow_fail=allow_fail, sudo_user=sudo_user)
 
-    def kill_process(self, process_grep_str, clean_shutdown=True, allow_fail=False, sudo_user=None):
+    def signal_process(self, process_grep_str, sig, allow_fail=False, sudo_user=None):
         cmd = """ps ax | grep -i """ + process_grep_str + """ | grep java | grep -v grep | awk '{print $1}'"""
         pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True, sudo_user=sudo_user)]
-
-        if clean_shutdown:
-            sig = signal.SIGTERM
-        else:
-            sig = signal.SIGKILL
 
         for pid in pids:
             self.signal(pid, sig, allow_fail=allow_fail, sudo_user=sudo_user)
 
-    def pause_process(self, process_grep_str, allow_fail=False, sudo_user=None):
-        cmd = """ps ax | grep -i """ + process_grep_str + """ | grep java | grep -v grep | awk '{print $1}'"""
-        pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True, sudo_user=sudo_user)]
 
-        for pid in pids:
-            self.signal(pid, signal.SIGSTOP, allow_fail=allow_fail, sudo_user=sudo_user)
+    def kill_process(self, process_grep_str, clean_shutdown=True, allow_fail=False, sudo_user=None):
+        self.signal_process(process_grep_str,
+                            signal.SIGTERM if clean_shutdown else signal.SIGKILL,
+                            allow_fail=allow_fail,
+                            sudo_user=sudo_user)
+
+    def pause_process(self, process_grep_str, allow_fail=False, sudo_user=None):
+        self.signal_process(process_grep_str, signal.SIGSTOP, allow_fail=allow_fail, sudo_user=sudo_user)
 
     def continue_process(self, process_grep_str, allow_fail=False, sudo_user=None):
-        cmd = """ps ax | grep -i """ + process_grep_str + """ | grep java | grep -v grep | awk '{print $1}'"""
-        pids = [pid for pid in self.ssh_capture(cmd, allow_fail=True, sudo_user=sudo_user)]
-
-        for pid in pids:
-            self.signal(pid, signal.SIGCONT, allow_fail=allow_fail, sudo_user=sudo_user)
+        self.signal_process(process_grep_str, signal.SIGCONT, allow_fail=allow_fail, sudo_user=sudo_user)
 
     def scp_from_command(self, src, dest, recursive=False):
         if self.user:
