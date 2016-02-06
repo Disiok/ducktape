@@ -133,15 +133,15 @@ class RemoteAccount(HttpMixin):
 
     def kill_process(self, process_grep_str, clean_shutdown=True, allow_fail=False, sudo_user=None):
         self.signal_process(process_grep_str,
-                            signal.SIGTERM if clean_shutdown else signal.SIGKILL,
+                            "SIGTERM" if clean_shutdown else "SIGKILL",
                             allow_fail=allow_fail,
                             sudo_user=sudo_user)
 
     def pause_process(self, process_grep_str, allow_fail=False, sudo_user=None):
-        self.signal_process(process_grep_str, signal.SIGSTOP, allow_fail=allow_fail, sudo_user=sudo_user)
+        self.signal_process(process_grep_str, "SIGSTOP", allow_fail=allow_fail, sudo_user=sudo_user)
 
     def continue_process(self, process_grep_str, allow_fail=False, sudo_user=None):
-        self.signal_process(process_grep_str, signal.SIGCONT, allow_fail=allow_fail, sudo_user=sudo_user)
+        self.signal_process(process_grep_str, "SIGCONT", allow_fail=allow_fail, sudo_user=sudo_user)
 
     def scp_from_command(self, src, dest, recursive=False):
         if self.user:
